@@ -1,3 +1,4 @@
+import { staticApi } from "./static-api.js";
 async function req(path, opts = {}) {
   const res = await fetch(path, {
     headers: { "Content-Type": "application/json" },
@@ -60,3 +61,7 @@ export const shiftDate = (iso, n) => {
 
 export const fmtTime = (iso) =>
   iso ? new Date(iso).toLocaleTimeString("es-PE", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" }) : "";
+
+// Versión estática (GitHub Pages): sin servidor, datos de demo empaquetados.
+export const IS_STATIC = import.meta.env.MODE === "static";
+if (IS_STATIC) Object.assign(api, staticApi);

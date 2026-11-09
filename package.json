@@ -10,7 +10,8 @@
     "start": "npm run build && npm run server",
     "add-user": "node --no-warnings --env-file-if-exists=.env server/add-user.js",
     "seed": "node --no-warnings --env-file-if-exists=.env server/demo-seed.js",
-    "demo": "npm run build && DEMO=1 node --no-warnings server/index.js"
+    "demo": "npm run build && DEMO=1 node --no-warnings server/index.js",
+    "build:static": "vite build --mode static --outDir dist-static && node --no-warnings scripts/export-static-demo.mjs dist-static/demo-data"
   },
   "dependencies": {
     "express": "^4.21.2",

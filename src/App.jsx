@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { api, fmtDate, fmtDateTime, fmtMoney, fmtTime, nights, shiftDate } from "./api.js";
+import { api, IS_STATIC, fmtDate, fmtDateTime, fmtMoney, fmtTime, nights, shiftDate } from "./api.js";
 import { BarList, Columns, Donut, GroupedBars, LineChart, ProgressMeter } from "./charts.jsx";
 
 // Menú con la misma estructura y nombres que el PMS, limitado a lo útil en contingencia.
@@ -105,7 +105,7 @@ function Login({ onDone }) {
   return (
     <div className="login-wrap">
       <form className="login card" onSubmit={submit}>
-        <img src="/icon.svg" alt="" width="48" height="48" />
+        <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width="48" height="48" />
         <h1>Respaldo PMS</h1>
         <p className="muted">Entra con tu usuario y contraseña de NewHotel.</p>
         <label>Usuario (email)
@@ -188,7 +188,7 @@ function Shell({ me, onLogout }) {
     <div className={`shell${menuOpen ? " menu-open" : ""}`}>
       <aside className="sidenav" aria-label="Menú principal">
         <div className="sidenav-brand">
-          <img src="/icon.svg" alt="" width="30" height="30" />
+          <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width="30" height="30" />
           <span>Respaldo PMS</span>
         </div>
         <nav>
@@ -221,7 +221,7 @@ function Shell({ me, onLogout }) {
 
       <div className="main-col">
         {status.data?.demo ? (
-          <div className="backup-strip is-demo" role="status">MODO DEMO · datos inventados · no es NewHotel</div>
+          <div className="backup-strip is-demo" role="status">MODO DEMO · datos inventados · no es NewHotel{IS_STATIC ? ` · versión estática (datos generados el ${fmtDate(status.data?.workDate, { day: "2-digit", month: "2-digit" })})` : ""}</div>
         ) : (
           <div className={`backup-strip${ageMin != null && ageMin > 30 ? " is-stale" : ""}`} role="status">
             COPIA DE RESPALDO · no es NewHotel · datos de las {status.data?.lastSyncAt ? fmtDateTime(status.data.lastSyncAt).split(", ").pop() : "—"}

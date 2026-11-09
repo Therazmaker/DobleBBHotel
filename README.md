@@ -25,6 +25,16 @@ El modo demo (`DEMO=1`) genera un hotel ficticio de 60 habitaciones: reservas, h
 y pagos, estado de habitaciones, planning y previsión, todo relativo a la fecha de hoy. No hace ninguna llamada
 a NewHotel. Para regenerar los datos: `npm run seed`. Los datos se regeneran solos si cambia el día.
 
+### Demo en GitHub Pages (versión estática)
+
+`npm run build:static` genera en `dist-static/` una versión **sin servidor**: la misma app con los datos
+inventados de la demo empaquetados en JSON y filtrados en el navegador. No incluye nada de la integración
+con NewHotel ni datos reales.
+
+El workflow `.github/workflows/pages.yml` la publica en GitHub Pages en cada push a `main` y una vez al día
+(para que las fechas de la demo sean las de hoy). Para activarlo: **Settings → Pages → Source: GitHub Actions**.
+En repos privados, GitHub Pages requiere un plan de pago, y el sitio publicado es público.
+
 ## Qué incluye
 
 | Pantalla | Contenido |
