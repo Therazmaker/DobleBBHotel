@@ -1,0 +1,27 @@
+{
+  "name": "hotel-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "server": "node --no-warnings --env-file-if-exists=.env server/index.js",
+    "start": "npm run build && npm run server",
+    "add-user": "node --no-warnings --env-file-if-exists=.env server/add-user.js",
+    "seed": "node --no-warnings --env-file-if-exists=.env server/demo-seed.js",
+    "demo": "npm run build && DEMO=1 node --no-warnings server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}
