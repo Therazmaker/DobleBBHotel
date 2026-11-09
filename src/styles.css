@@ -600,3 +600,4 @@ button.stat-badge { cursor: pointer; }
 .demo-hint code { font-size: 13px; }
 .demo-hint .link { margin-left: 8px; }
 .mode-demo { background: var(--accent-soft); color: var(--accent); }
+.embedded .print-btn { display: none !important; }

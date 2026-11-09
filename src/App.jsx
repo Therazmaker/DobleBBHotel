@@ -349,7 +349,7 @@ function AccountDetail({ id, onBack, stamp }) {
             {data.company && ` · ${data.company}`}{data.groupName && ` · grupo ${data.groupName}`}
           </div>
         </div>
-        <button className="btn no-print" onClick={() => window.print()}>Imprimir</button>
+        <button className="btn no-print print-btn" onClick={() => window.print()}>Imprimir</button>
       </header>
 
       {data.remarks && <div className="remarks"><strong>Observaciones:</strong> {data.remarks}</div>}
@@ -420,7 +420,7 @@ function Reservations({ stamp, today }) {
       <div className="filters no-print">
         <input className="search" type="search" placeholder="Buscar huésped, reserva, entidad, voucher, grupo…"
           value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar reserva" />
-        <button className="btn" onClick={() => window.print()}>Imprimir</button>
+        <button className="btn print-btn" onClick={() => window.print()}>Imprimir</button>
       </div>
       {!debounced && (
         <div className="daychips no-print" role="group" aria-label="Día de llegada">
@@ -607,7 +607,7 @@ function RoomStatus({ stamp }) {
             <span className="dc-day">{l}</span><span className="dc-n">{n ?? 0}</span>
           </button>
         ))}
-        <button className="btn" onClick={() => window.print()}>Imprimir</button>
+        <button className="btn print-btn" onClick={() => window.print()}>Imprimir</button>
       </div>
       {floors.map((f) => (
         <Card key={f} title={`Piso ${f}`}>
@@ -1261,7 +1261,7 @@ function Contingency({ stamp }) {
             {ageMin != null && ` (hace ${ageMin} min)`} · generado {fmtDateTime(data.generatedAt)}
           </p>
         </div>
-        <button className="btn primary no-print" onClick={() => window.print()}>Imprimir / PDF</button>
+        <button className="btn primary no-print print-btn" onClick={() => window.print()}>Imprimir / PDF</button>
       </div>
 
       {stale && (
