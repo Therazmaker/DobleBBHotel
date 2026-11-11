@@ -312,6 +312,8 @@ export function scrubStoredPans() {
     ["accountMovements", "id", ["description", "raw"]],
     ["occupancy", "date", ["raw"]],
     ["widgets", "rowid", ["data"]],
+    ["reservations", "id", ["comments", "raw"]],
+    ["rooms", "id", ["raw"]],
   ];
   let changed = 0;
   tx(() => {

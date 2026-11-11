@@ -521,6 +521,7 @@ button.stat-badge { cursor: pointer; }
 .topbar-user { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; white-space: nowrap; }
 .topbar-user + .topbar-hotel { margin-left: 16px; }
 .mode { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.mode-open { background: var(--ok-soft); color: var(--ok); }
 .mode-online { background: var(--ok-soft); color: var(--ok); }
 .mode-offline { background: var(--warn-soft); color: var(--warn); }
 .mode-local { background: var(--err); color: #fff; }

@@ -7,7 +7,14 @@
 //   en los últimos OFFLINE_DAYS días.
 // - NewHotel responde 401: contraseña incorrecta. Se rechaza (no se usa la huella).
 // - Usuarios "local": administradores de emergencia creados con `npm run add-user`.
+// - AUTH_MODE=open: sin login. Entra cualquiera desde las redes permitidas (ALLOWED_NETWORKS);
+//   pensado para un servidor del hotel al que solo llegan los PCs de recepción.
+//
+// ALLOWED_NETWORKS (en cualquier modo): lista de IPs o redes IPv4 (CIDR) separadas por comas que
+// pueden abrir la app, p. ej. "192.168.1.0/24,10.0.0.15". En modo open, si está vacía, se permiten
+// solo las subredes del propio servidor. Siempre se permite el propio servidor (localhost).
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from "node:crypto";
+import { networkInterfaces } from "node:os";
 import { db } from "./db.js";
 import { BASE_URL } from "./newhotel.js";
 
@@ -39,6 +46,45 @@ CREATE TABLE IF NOT EXISTS loginAttempts (
 const OFFLINE_DAYS = Number(process.env.AUTH_OFFLINE_DAYS || 30);
 const SESSION_HOURS = Number(process.env.AUTH_SESSION_HOURS || 12);
 const COOKIE = "rp_session";
+const OPEN = (process.env.AUTH_MODE || "").toLowerCase() === "open";
+const OPEN_USER = { email: "recepcion", name: process.env.OPEN_USER_NAME || "Recepción", mode: "open", source: "open", role: null };
+
+// --- Redes permitidas ---
+const ipToInt = (ip) => {
+  const p = ip.split(".").map(Number);
+  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return null;
+  return ((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]) >>> 0;
+};
+function parseNet(spec) {
+  const [ip, bitsRaw] = spec.trim().split("/");
+  const base = ipToInt(ip);
+  const bits = bitsRaw === undefined ? 32 : Number(bitsRaw);
+  if (base === null || !Number.isInteger(bits) || bits < 0 || bits > 32) throw new Error(`ALLOWED_NETWORKS: "${spec}" no es una IP o red válida`);
+  const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+  return { base: (base & mask) >>> 0, mask, label: `${ip}/${bits}` };
+}
+function serverSubnets() {
+  const nets = [];
+  for (const list of Object.values(networkInterfaces())) for (const a of list || [])
+    if (a.family === "IPv4" && !a.internal && a.cidr) nets.push(parseNet(a.cidr));
+  return nets;
+}
+const configured = (process.env.ALLOWED_NETWORKS || "").split(",").filter((x) => x.trim()).map(parseNet);
+const ALLOWED = configured.length ? configured : OPEN ? serverSubnets() : null; // null = sin restricción
+const clientIp = (req) => {
+  const a = req.socket.remoteAddress || "";
+  return a.startsWith("::ffff:") ? a.slice(7) : a;
+};
+function ipAllowed(ip) {
+  if (ip === "127.0.0.1" || ip === "::1") return true;
+  if (!ALLOWED) return true;
+  const n = ipToInt(ip);
+  return n !== null && ALLOWED.some((net) => ((n & net.mask) >>> 0) === net.base);
+}
+export const accessInfo = () => ({
+  mode: OPEN ? "open" : "login",
+  networks: ALLOWED ? ALLOWED.map((n) => n.label) : ["todas"],
+});
 const N = 16384;
 
 export function hashPassword(pw) {
@@ -104,7 +150,8 @@ function createSession(res, email, mode) {
     sha(token), email, mode, now.toISOString(), expires.toISOString()
   );
   db.prepare("UPDATE users SET lastLoginAt = ? WHERE email = ?").run(now.toISOString(), email);
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  // Secure solo si se sirve por HTTPS (en la red interna del hotel normalmente es http).
+  const secure = process.env.COOKIE_SECURE === "1" ? "; Secure" : "";
   res.setHeader(
     "Set-Cookie",
     `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_HOURS * 3600}${secure}`
@@ -125,6 +172,25 @@ function readSession(req) {
 }
 
 export function installAuth(app) {
+  // Antes que nada (incluida la web): solo las redes permitidas.
+  app.use((req, res, next) => {
+    if (ipAllowed(clientIp(req))) return next();
+    res.status(403).type("text/plain; charset=utf-8").send("Este equipo no tiene acceso al respaldo del PMS.");
+  });
+  if (ALLOWED) console.log(`Acceso permitido desde: localhost, ${ALLOWED.map((n) => n.label).join(", ") || "(ninguna red)"}`);
+  if (OPEN) console.log("Modo sin login (AUTH_MODE=open): entra cualquiera desde esas redes.");
+
+  if (OPEN) {
+    app.post("/api/login", (_req, res) => res.json({ ok: true, mode: "open" }));
+    app.post("/api/logout", (_req, res) => res.json({ ok: true }));
+    app.get("/api/me", (_req, res) => res.json(OPEN_USER));
+    app.use("/api", (req, _res, next) => {
+      req.user = OPEN_USER;
+      next();
+    });
+    return;
+  }
+
   app.post("/api/login", async (req, res) => {
     const email = String(req.body?.email || "").trim().toLowerCase();
     const password = String(req.body?.password || "");

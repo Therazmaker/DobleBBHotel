@@ -9,6 +9,7 @@
     "server": "node --no-warnings --env-file-if-exists=.env server/index.js",
     "start": "npm run build && npm run server",
     "add-user": "node --no-warnings --env-file-if-exists=.env server/add-user.js",
+    "backup": "node --no-warnings --env-file-if-exists=.env server/backup.js",
     "seed": "node --no-warnings --env-file-if-exists=.env server/demo-seed.js",
     "demo": "npm run build && DEMO=1 node --no-warnings server/index.js",
     "build:static": "vite build --mode static --outDir dist-static && node --no-warnings scripts/export-static-demo.mjs dist-static/demo-data"

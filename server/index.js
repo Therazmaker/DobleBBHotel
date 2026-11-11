@@ -4,7 +4,8 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { db, getSetting, scrubStoredPans } from "./db.js";
-import { installAuth } from "./auth.js";
+import { accessInfo, installAuth } from "./auth.js";
+import { BACKUP_DIR, backupIfDue, lastBackup } from "./backup.js";
 import { canAutoLogin, getToken, saveToken, tokenInfo } from "./newhotel.js";
 import { syncAll, todayInHotel } from "./sync.js";
 
@@ -52,6 +53,8 @@ app.get("/api/status", (_req, res) => {
     totals,
     runs: lastRuns,
     today: todayInHotel(),
+    backup: DEMO ? null : { dir: BACKUP_DIR, last: lastBackup() },
+    access: accessInfo(),
   });
 });
 
@@ -353,7 +356,7 @@ if (scrubbed) {
 }
 
 app.listen(PORT, () => {
-  console.log(`Hotel dashboard en http://localhost:${PORT}`);
+  console.log(`Respaldo PMS en http://localhost:${PORT}`);
   const tick = async () => {
     if (DEMO || (!getToken() && !canAutoLogin() && !process.env.NEWHOTEL_ALLOW_NO_TOKEN)) return;
     const r = await syncAll();
@@ -361,4 +364,9 @@ app.listen(PORT, () => {
   };
   tick();
   setInterval(tick, SYNC_MINUTES * 60_000);
+  if (!DEMO) {
+    // Copia de seguridad diaria: se comprueba cada hora si ya está la de hoy.
+    setTimeout(backupIfDue, 60_000);
+    setInterval(backupIfDue, 3600_000);
+  }
 });

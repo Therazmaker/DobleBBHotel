@@ -86,9 +86,16 @@ La sincronización corre cada 10 min (`SYNC_INTERVAL_MIN`):
 Cada respuesta de NewHotel trae un token renovado en la cabecera `Authorization`.
 Se guarda, así la sesión no caduca mientras la sincronización siga corriendo.
 
-## Arrancar
+## Instalar en el servidor del hotel (Windows Server)
 
-Requiere Node ≥ 22.5 (usa el SQLite integrado).
+Guía paso a paso: [docs/INSTALACION-WINDOWS.md](docs/INSTALACION-WINDOWS.md). En resumen: instalar
+Node.js LTS y ejecutar `scripts\windows\instalar.ps1` como administrador. Queda como tarea programada que
+arranca con Windows, se reinicia si falla, sincroniza cada 10 minutos y hace una copia diaria de la base.
+Hoja para recepción: [docs/CONTINGENCIA.md](docs/CONTINGENCIA.md).
+
+## Arrancar (desarrollo)
+
+Requiere Node ≥ 22.12 (usa el SQLite integrado).
 
 ```bash
 npm install
@@ -116,18 +123,23 @@ Para desarrollo con recarga en caliente: `npm run server` en una terminal y `npm
 | `HOTEL_TZ` | `America/Lima` | Zona horaria para "hoy" |
 | `PORT` | `3000` | Puerto |
 | `DB_PATH` | `data/hotel.db` | Archivo SQLite |
+| `AUTH_MODE` | — | `open` = sin login, entra cualquiera desde `ALLOWED_NETWORKS` |
+| `ALLOWED_NETWORKS` | — | IPs/redes IPv4 (CIDR) que pueden abrir la app. En modo `open`, vacío = las redes del servidor |
+| `BACKUP_DIR` / `BACKUP_KEEP_DAYS` | `data/backups` / `30` | Copia diaria de la base (`npm run backup` para una ahora) |
+| `COOKIE_SECURE` | — | `1` si se sirve por HTTPS |
 
 ## Datos personales
 
 La base de datos guarda nombres, documentos, emails y teléfonos de huéspedes.
 
 - No subas `data/` a git (ya está en `.gitignore`).
-- No publiques la app sin login.
+- No publiques la app en internet. Sin login (`AUTH_MODE=open`) solo dentro de la red del hotel y
+  con `ALLOWED_NETWORKS` limitado a los PCs de recepción si la wifi de huéspedes comparte red.
 - El service worker cachea las últimas respuestas para uso sin conexión en el dispositivo.
 
 ### Acceso del personal
 
-Cada trabajador entra con **su usuario y contraseña de NewHotel**:
+Con `AUTH_MODE=open` no hay login (instalación del hotel). Sin él, cada trabajador entra con **su usuario y contraseña de NewHotel**:
 
 | Situación | Qué pasa |
 |---|---|
@@ -139,7 +151,7 @@ Cada trabajador entra con **su usuario y contraseña de NewHotel**:
 - **Antes de una caída**, cada trabajador debe entrar al menos una vez con NewHotel funcionando.
 - **Accesos de emergencia** (no dependen de NewHotel): `npm run add-user -- correo@hotel.com "Nombre"`.
   La contraseña se pide por teclado (mínimo 12 caracteres).
-- Sesión en cookie `HttpOnly` + `SameSite=Strict` (y `Secure` con `NODE_ENV=production`), de `AUTH_SESSION_HOURS` horas (12 por defecto).
+- Sesión en cookie `HttpOnly` + `SameSite=Strict` (y `Secure` con `COOKIE_SECURE=1`), de `AUTH_SESSION_HOURS` horas (12 por defecto).
 - Bloqueo de 10 minutos tras 8 intentos fallidos por usuario o por IP.
 - Si cambias la contraseña en NewHotel, la huella se actualiza en el siguiente acceso con NewHotel funcionando.
   Mientras NewHotel esté caído, seguiría valiendo la contraseña anterior.
@@ -150,6 +162,9 @@ Cada trabajador entra con **su usuario y contraseña de NewHotel**:
 El personal a veces escribe la tarjeta de garantía completa en las observaciones de la reserva en NewHotel.
 **Esta app nunca guarda un número de tarjeta completo.** `server/pci.js` enmascara, antes de guardar,
 cualquier secuencia de 13 a 19 dígitos que pase la validación de Luhn: deja solo los 4 últimos (`•••• •••• •••• 8694`).
+El **CVV** (`CVV`, `CVC`, `CID`, `código de seguridad` seguido de 3–4 dígitos) se quita entero (`CVV •••`):
+PCI DSS prohíbe guardarlo. Los campos de identificadores internos (`…Id`, `reservationSerieNumber`) no se
+enmascaran, porque un número largo puede pasar Luhn por casualidad.
 Se aplica a las observaciones, a las descripciones y a todo el JSON crudo. Al arrancar, el servidor
 limpia también los datos ya guardados y compacta la base de datos (`VACUUM`).
 

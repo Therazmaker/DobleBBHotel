@@ -235,11 +235,11 @@ function Shell({ me, onLogout }) {
             <h1>{current?.label}</h1>
           </div>
           <div className="topbar-user">
-            <span className={`mode mode-${status.data?.demo ? "demo" : me.mode}`} title={{ online: "Validado con NewHotel", offline: "NewHotel no respondía: validado con la copia local", local: "Acceso de emergencia" }[me.mode]}>
-              {status.data?.demo ? "Demo" : { online: "NewHotel", offline: "Sin NewHotel", local: "Emergencia" }[me.mode]}
+            <span className={`mode mode-${status.data?.demo ? "demo" : me.mode}`} title={{ online: "Validado con NewHotel", offline: "NewHotel no respondía: validado con la copia local", local: "Acceso de emergencia", open: "Acceso directo desde la red del hotel" }[me.mode]}>
+              {status.data?.demo ? "Demo" : { online: "NewHotel", offline: "Sin NewHotel", local: "Emergencia", open: "Red del hotel" }[me.mode]}
             </span>
             <span className="user-name">{me.name || me.email}</span>
-            <button className="link" onClick={onLogout}>Salir</button>
+            {me.mode !== "open" && <button className="link" onClick={onLogout}>Salir</button>}
           </div>
           <div className="topbar-hotel">
             {status.data?.workDate && <strong>{fmtDate(status.data.workDate, { day: "2-digit", month: "2-digit", year: "numeric" })}</strong>}
@@ -1202,6 +1202,18 @@ function Sync({ status, onSynced }) {
           <dt>Última sincronización</dt><dd>{fmtDateTime(s?.lastSyncAt)}</dd>
           <dt>Frecuencia</dt><dd>Cada {s?.syncIntervalMinutes} min</dd>
           <dt>Registros guardados</dt><dd>{s?.totals.total ?? 0} huéspedes ({s?.totals.inHouse ?? 0} en casa)</dd>
+          {s?.backup && <>
+            <dt>Copia de seguridad</dt>
+            <dd>
+              {s.backup.last?.ok ? `${fmtDateTime(s.backup.last.at)} · ${(s.backup.last.bytes / 1048576).toFixed(1)} MB` : "Todavía ninguna"}
+              {s.backup.last?.lastError && <span className="msg err"> · falló la última: {s.backup.last.lastError.error}</span>}
+              <br /><small className="muted">{s.backup.dir}</small>
+            </dd>
+          </>}
+          {s?.access && <>
+            <dt>Acceso</dt>
+            <dd>{s.access.mode === "open" ? "Sin login" : "Con usuario de NewHotel"} · desde {s.access.networks.join(", ")}</dd>
+          </>}
         </dl>
         <div className="actions">
           <button className="btn primary" disabled={busy}
